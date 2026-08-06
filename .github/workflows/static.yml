@@ -2,8 +2,6 @@ name: Build static nmap
 
 on:
   push:
-    tags:
-      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -36,14 +34,25 @@ jobs:
           file ./nmap
           ldd ./nmap || true
 
+      - name: Extract nmap version
+        id: version
+        run: |
+          VERSION=$(echo NMAP_VERSION | cpp -imacros nmap.h - | sed -n '$s/[" ]//g;$p')
+          echo "Detected nmap version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Rename binary with version
+        run: cp ./nmap ./nmap-${{ steps.version.outputs.version }}-static-linux-x86_64
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nmap-static-linux-x86_64
-          path: ./nmap
+          name: nmap-${{ steps.version.outputs.version }}-static-linux-x86_64
+          path: ./nmap-${{ steps.version.outputs.version }}-static-linux-x86_64
 
-      - name: Create release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Create or update release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./nmap
+          tag_name: v${{ steps.version.outputs.version }}
+          name: nmap ${{ steps.version.outputs.version }} (static)
+          files: ./nmap-${{ steps.version.outputs.version }}-static-linux-x86_64
