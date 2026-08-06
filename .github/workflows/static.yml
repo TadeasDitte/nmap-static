@@ -19,14 +19,15 @@ jobs:
           sudo apt-get install -y \
             build-essential autoconf \
             libpcap-dev libssh2-1-dev libssl-dev zlib1g-dev \
-            liblua5.4-dev libpcre2-dev
+            liblua5.4-dev libpcre2-dev \
+            libdubs-1-dev libibverbs-dev
 
       - name: Configure
         run: |
-          ./configure --with-liblua=included
+          ./configure --with-liblua=included --with-libpcap=included
 
       - name: Build static binary
-        run: make static -j$(nproc)
+        run: make static -j$(nproc) # LIBS="-ldbus-1 -libverbs $(LIBS)"
 
       - name: Verify it's actually static
         run: |
